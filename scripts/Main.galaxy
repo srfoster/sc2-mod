@@ -206,7 +206,7 @@ void Main_init()
     TriggerAddEventChatMessage(lp_chatTrigger, c_playerAny, "", false);
 
     //EvalLisp(gv_configBaseLisp, lp_player, lp_start);
-    EvalLisp(gv_configUnitsLisp, lp_player, lp_start);
+    //EvalLisp(gv_configUnitsLisp, lp_player, lp_start);
     
     Log("Type 'ui' in chat to open Lisp UI dialog, or 'lisp' for help.");
 }
