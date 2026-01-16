@@ -38,8 +38,34 @@ void SpawnZealot(int count, int player, point location, fixed facing)
     );
 }
 
-// Generic unit spawn function
-void SpawnUnit(string unitType, int count, int player, point location, fixed facing)
+// Generic unit spawn function - returns a unitgroup of spawned units
+unitgroup SpawnUnit(string unitType, int count, int player, point location, fixed facing)
 {
-    UnitCreate(count, unitType, 0, player, location, facing);
+    unitgroup spawned;
+    int i;
+    unit u;
+    
+    spawned = UnitGroupEmpty();
+    
+    // Create units one at a time and add to group
+    i = 0;
+    while (i < count) {
+        UnitCreate(1, unitType, 0, player, location, facing);
+        u = UnitLastCreated();
+        UnitGroupAdd(spawned, u);
+        i = i + 1;
+    }
+    
+    return spawned;
+}
+
+// Apply an upgrade for a player
+void ApplyPlayerUpgrade(string upgradeName, int player)
+{
+    Log("Researching upgrade: " + upgradeName + " for player " + IntToString(player));
+    
+    // Research the upgrade for the player
+    TechTreeUpgradeAddLevel(player, upgradeName, 1);
+    
+    Log("  Upgrade complete!");
 }

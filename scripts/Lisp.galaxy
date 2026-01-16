@@ -10,6 +10,13 @@ static string[c_maxSymbols] gv_symbolNames;
 static string[c_maxSymbols] gv_symbolValues;
 static int gv_symbolCount = 0;
 
+// Unitgroup table for storing spawned units
+const int c_maxUnitGroups = 50;
+static string[c_maxUnitGroups] gv_unitGroupNames;
+static unitgroup[c_maxUnitGroups] gv_unitGroups;
+static int gv_unitGroupCount = 0;
+static int gv_lastUnitGroupId = 0;  // Auto-incrementing ID for temporary groups
+
 // Function table for function definitions
 const int c_maxFunctions = 50;
 static string[c_maxFunctions] gv_functionNames;
@@ -65,6 +72,43 @@ string LookupVariable(string name)
     
     // Not found - return original name
     return name;
+}
+
+// Store a unitgroup and return its reference ID
+string StoreUnitGroup(unitgroup units)
+{
+    string groupId;
+    
+    gv_lastUnitGroupId = gv_lastUnitGroupId + 1;
+    groupId = "@unitgroup" + IntToString(gv_lastUnitGroupId);
+    
+    if (gv_unitGroupCount < c_maxUnitGroups) {
+        gv_unitGroupNames[gv_unitGroupCount] = groupId;
+        gv_unitGroups[gv_unitGroupCount] = units;
+        gv_unitGroupCount = gv_unitGroupCount + 1;
+    }
+    else {
+        Log("  ERROR: UnitGroup table full!");
+    }
+    
+    return groupId;
+}
+
+// Retrieve a unitgroup by its reference ID
+unitgroup RetrieveUnitGroup(string groupId)
+{
+    int i;
+    
+    i = 0;
+    while (i < gv_unitGroupCount) {
+        if (gv_unitGroupNames[i] == groupId) {
+            return gv_unitGroups[i];
+        }
+        i = i + 1;
+    }
+    
+    Log("  ERROR: UnitGroup not found: " + groupId);
+    return null;
 }
 
 // Define a function in the function table
@@ -283,9 +327,10 @@ int CountSExprTokens(string sexpr)
 
 // === EVALUATOR ===
 
-// Evaluate a spawn command from s-expression
-// Example: "(spawn 'Marine 8 3 0 90)" or "(spawn 'Marine 8 3 0 90 2)" for player 2
-void EvalSpawn(string sexpr, int player, point startLocation)
+// Evaluate a spawn command from s-expression - returns unitgroup ID
+// Example: "(spawn 'Marine)" with defaults, or "(spawn 'Marine 5 10 20 45 2)" with all params
+// Defaults: count=1, offsetX=0, offsetY=0, facing=90, player=1
+string EvalSpawn(string sexpr, int player, point startLocation)
 {
     string command;
     string unitType;
@@ -296,6 +341,7 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     int targetPlayer;
     point spawnPoint;
     int tokenCount;
+    unitgroup spawned;
     
     // Parse the s-expression
     command = GetSExprToken(sexpr, 0);
@@ -306,7 +352,7 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     
     if (command != "spawn") {
         Log("  ERROR: Expected 'spawn' command, got '" + command + "'");
-        return;
+        return "";
     }
     
     // Get unit type (with quote or variable name)
@@ -322,31 +368,90 @@ void EvalSpawn(string sexpr, int player, point startLocation)
         // Log("  Looked up variable: " + GetSExprToken(sexpr, 1) + " -> " + unitType);
     }
     
-    // Parse numeric arguments (look up variables first)
-    count = ParseInt(LookupVariable(GetSExprToken(sexpr, 2)));
-    offsetX = ParseInt(LookupVariable(GetSExprToken(sexpr, 3)));
-    offsetY = ParseInt(LookupVariable(GetSExprToken(sexpr, 4)));
-    facing = ParseInt(LookupVariable(GetSExprToken(sexpr, 5)));
+    // Parse optional numeric arguments with defaults
+    // tokenCount includes: command, unitType, params..., closing paren
+    // So tokenCount >= 3 means we have at least the unit type
     
-    // Check for optional player parameter (6th token)
-    if (tokenCount >= 7) {  // 6 tokens + closing paren = 7 total
+    // Count (default: 1)
+    if (tokenCount >= 4) {
+        count = ParseInt(LookupVariable(GetSExprToken(sexpr, 2)));
+    } else {
+        count = 1;
+    }
+    
+    // OffsetX (default: 0)
+    if (tokenCount >= 5) {
+        offsetX = ParseInt(LookupVariable(GetSExprToken(sexpr, 3)));
+    } else {
+        offsetX = 0;
+    }
+    
+    // OffsetY (default: 0)
+    if (tokenCount >= 6) {
+        offsetY = ParseInt(LookupVariable(GetSExprToken(sexpr, 4)));
+    } else {
+        offsetY = 0;
+    }
+    
+    // Facing (default: 90)
+    if (tokenCount >= 7) {
+        facing = ParseInt(LookupVariable(GetSExprToken(sexpr, 5)));
+    } else {
+        facing = 90;
+    }
+    
+    // Player (default: 1)
+    if (tokenCount >= 8) {
         targetPlayer = ParseInt(LookupVariable(GetSExprToken(sexpr, 6)));
     } else {
-        targetPlayer = player;  // Default to current player
+        targetPlayer = 1;
     }
     
     // Calculate spawn point
     spawnPoint = PointWithOffset(startLocation, offsetX, offsetY);
     
-    // Spawn based on unit type
-    if (StringContains(unitType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
-        // Base spawn - ignores count and facing parameters (creates CommandCenter + SCVs)
-        SpawnBase(targetPlayer, spawnPoint);
+    // Spawn units and get the unitgroup
+    spawned = SpawnUnit(unitType, count, targetPlayer, spawnPoint, facing);
+    
+    // Store and return the unitgroup reference
+    return StoreUnitGroup(spawned);
+}
+
+// Evaluate an upgrade command from s-expression
+// Example: "(upgrade 'Stimpack)" or "(upgrade 'Stimpack 2)" for player 2
+void EvalUpgrade(string sexpr, int player, point startLocation)
+{
+    string command;
+    string upgradeName;
+    int targetPlayer;
+    int tokenCount;
+    
+    command = GetSExprToken(sexpr, 0);
+    tokenCount = CountSExprTokens(sexpr);
+    
+    if (command != "upgrade") {
+        Log("  ERROR: Expected 'upgrade' command, got '" + command + "'");
+        return;
+    }
+    
+    // Get upgrade name (with quote)
+    upgradeName = GetSExprToken(sexpr, 1);
+    if (StartsWith(upgradeName, "'")) {
+        upgradeName = StringSub(upgradeName, 2, StringLength(upgradeName));
     }
     else {
-        // Generic unit spawn - works for any unit type
-        SpawnUnit(unitType, count, targetPlayer, spawnPoint, facing);
+        upgradeName = LookupVariable(upgradeName);
     }
+    
+    // Check for optional player parameter
+    if (tokenCount >= 3) {  // upgrade, name, player, closing paren
+        targetPlayer = ParseInt(LookupVariable(GetSExprToken(sexpr, 2)));
+    } else {
+        targetPlayer = player;  // Default to current player
+    }
+    
+    // Apply the upgrade for the player
+    ApplyPlayerUpgrade(upgradeName, targetPlayer);
 }
 
 // Evaluate a define command from s-expression
@@ -738,6 +843,9 @@ void EvalExpression(string sexpr, int player, point startLocation)
     }
     else if (command == "spawn") {
         EvalSpawn(sexpr, player, startLocation);
+    }
+    else if (command == "upgrade") {
+        EvalUpgrade(sexpr, player, startLocation);
     }
     else if (command == "if") {
         EvalIf(sexpr, player, startLocation);
