@@ -11,11 +11,168 @@ include "scripts/Spawn.galaxy"
 // Include Lisp evaluator (needs to be after Spawn functions)
 include "scripts/Lisp.galaxy"
 
+// Forward declarations for UI functions
+void CreateLispUI(int player, point location);
+bool LispUIHandler(bool testConds, bool runActions);
+
+// Global UI variables
+int g_lispDialog;
+int g_lispTextInput;
+int g_lispExecuteButton;
+int g_lispCloseButton;
+int g_lispCurrentPlayer;
+point g_lispCurrentLocation;
+string g_lispInputText;
+
+// Chat command handler for Lisp evaluation
+bool ChatLispCommand(bool testConds, bool runActions)
+{
+    string chatText;
+    int player;
+    point startLocation;
+
+    if (!runActions) {
+        return true;
+    }
+
+    chatText = EventChatMessage(false);
+    player = EventPlayer();
+    startLocation = PlayerStartLocation(player);
+
+    // Check if message starts with "(" (s-expression) or is a special command
+    if (StringSub(chatText, 1, 1) == "(") {
+        // Evaluate the Lisp code
+        EvalLisp(chatText, player, startLocation);
+    }
+    else if (chatText == "lisp") {
+        // Show help message
+        Log("=== Lisp Commands Help ===");
+        Log("Type any s-expression starting with ( to execute Lisp code");
+        Log("Examples:");
+        Log("  (spawn 'Marine 3 10 5 90)");
+        Log("  (define x 15)");
+        Log("  (log \"Hello World\")");
+        Log("  (begin (spawn 'Marine 5 0 0 0) (log \"Done\"))");
+    }
+    else if (chatText == "ui") {
+        // Show Lisp UI dialog
+        CreateLispUI(player, startLocation);
+    }
+    else if (chatText == "exec1") {
+        // Execute predefined Lisp: spawn 5 Marines
+        EvalLisp("(spawn 'Marine 5 10 5 90)", player, startLocation);
+    }
+    else if (chatText == "exec2") {
+        // Execute predefined Lisp: spawn 3 Zealots  
+        EvalLisp("(spawn 'Zealot 3 15 5 90)", player, startLocation);
+    }
+    else if (chatText == "exec3") {
+        // Execute predefined Lisp: arithmetic test
+        EvalLisp("(begin (define x (+ 5 3)) (log \"Result:\") (spawn 'Marine x 20 5 90))", player, startLocation);
+    }
+
+    return true;
+}
+
+// UI event handler for Lisp dialog
+bool LispUIHandler(bool testConds, bool runActions)
+{
+    string inputText;
+    
+    if (!runActions) {
+        return true;
+    }
+    
+    if (EventDialogControl() == g_lispExecuteButton) {
+        // Get text from input field
+        inputText = DialogControlGetPropertyAsString(g_lispTextInput, c_triggerControlPropertyEditText, g_lispCurrentPlayer);
+        
+        if (StringLength(inputText) > 0) {
+            EvalLisp(inputText, g_lispCurrentPlayer, g_lispCurrentLocation);
+            Log("Executed: " + inputText);
+        } else {
+            Log("Please enter a Lisp expression first!");
+        }
+    }
+    else if (EventDialogControl() == g_lispCloseButton) {
+        // Close dialog
+        DialogSetVisible(g_lispDialog, PlayerGroupSingle(g_lispCurrentPlayer), false);
+        DialogDestroy(g_lispDialog);
+        g_lispDialog = c_invalidDialogId;
+        Log("Lisp UI closed.");
+    }
+    else {
+        // Handle "Clear" button - clear the text input
+        DialogControlSetPropertyAsString(g_lispTextInput, c_triggerControlPropertyEditText, PlayerGroupSingle(g_lispCurrentPlayer), "");
+        Log("Text input cleared.");
+    }
+    
+    return true;
+}
+
+
+// Create Lisp UI dialog
+void CreateLispUI(int player, point location)
+{
+    trigger uiTrigger;
+    
+    // Don't create if already exists
+    if (g_lispDialog != c_invalidDialogId) {
+        Log("Lisp UI dialog is already open.");
+        return;
+    }
+    
+    g_lispCurrentPlayer = player;
+    g_lispCurrentLocation = location;
+    g_lispInputText = "(spawn 'Marine 3 10 5 90)";
+    
+    // Create dialog
+    DialogCreate(500, 250, c_anchorCenter, 0, 0, true);
+    g_lispDialog = DialogLastCreated();
+    
+    // Create text input field
+    DialogControlCreate(g_lispDialog, c_triggerControlTypeEditBox);
+    g_lispTextInput = DialogControlLastCreated();
+    DialogControlSetSize(g_lispTextInput, PlayerGroupSingle(player), 450, 30);
+    DialogControlSetPosition(g_lispTextInput, PlayerGroupSingle(player), c_anchorCenter, 0, -50);
+    DialogControlSetPropertyAsString(g_lispTextInput, c_triggerControlPropertyEditText, PlayerGroupSingle(player), g_lispInputText);
+    
+    // Create execute button
+    DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
+    g_lispExecuteButton = DialogControlLastCreated();
+    DialogControlSetSize(g_lispExecuteButton, PlayerGroupSingle(player), 100, 35);
+    DialogControlSetPosition(g_lispExecuteButton, PlayerGroupSingle(player), c_anchorCenter, -100, 30);
+    DialogControlSetPropertyAsText(g_lispExecuteButton, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Execute"));
+    
+    // Create clear button
+    DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
+    DialogControlSetSize(DialogControlLastCreated(), PlayerGroupSingle(player), 80, 35);
+    DialogControlSetPosition(DialogControlLastCreated(), PlayerGroupSingle(player), c_anchorCenter, 0, 30);
+    DialogControlSetPropertyAsText(DialogControlLastCreated(), c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Clear"));
+    
+    // Create close button
+    DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
+    g_lispCloseButton = DialogControlLastCreated();
+    DialogControlSetSize(g_lispCloseButton, PlayerGroupSingle(player), 80, 35);
+    DialogControlSetPosition(g_lispCloseButton, PlayerGroupSingle(player), c_anchorCenter, 100, 30);
+    DialogControlSetPropertyAsText(g_lispCloseButton, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Close"));
+    
+    // Create UI trigger for button events
+    uiTrigger = TriggerCreate("LispUIHandler");
+    TriggerAddEventDialogControl(uiTrigger, c_playerAny, c_invalidDialogControlId, c_triggerControlEventTypeClick);
+    
+    // Show dialog
+    DialogSetVisible(g_lispDialog, PlayerGroupSingle(player), true);
+    
+    Log("Lisp UI opened! Type your Lisp code and click Execute, or Clear to empty the field.");
+}
+
 // Main initialization
 void Main_init()
 {
     int   lp_player;
     point lp_start;
+    trigger lp_chatTrigger;
 
     lp_player = 1;
     
@@ -25,6 +182,21 @@ void Main_init()
 
     lp_start = PlayerStartLocation(lp_player);
 
-    EvalLisp(gv_configBaseLisp, lp_player, lp_start);
+    // Initialize UI variables
+    g_lispDialog = c_invalidDialogId;
+    g_lispTextInput = c_invalidDialogControlId;
+    g_lispExecuteButton = c_invalidDialogControlId;
+    g_lispCloseButton = c_invalidDialogControlId;
+    g_lispCurrentPlayer = 1;
+    g_lispCurrentLocation = lp_start;
+    g_lispInputText = "(spawn 'Marine 3 10 5 90)";
+
+    // Create chat command trigger for Lisp evaluation
+    lp_chatTrigger = TriggerCreate("ChatLispCommand");
+    TriggerAddEventChatMessage(lp_chatTrigger, c_playerAny, "", false);
+
+    //EvalLisp(gv_configBaseLisp, lp_player, lp_start);
     EvalLisp(gv_configUnitsLisp, lp_player, lp_start);
+    
+    Log("Type 'ui' in chat to open Lisp UI dialog, or 'lisp' for help.");
 }

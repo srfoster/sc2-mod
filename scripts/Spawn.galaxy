@@ -38,15 +38,8 @@ void SpawnZealot(int count, int player, point location, fixed facing)
     );
 }
 
-// Function to spawn Marines
-void SpawnMarine(int count, int player, point location, fixed facing)
+// Generic unit spawn function
+void SpawnUnit(string unitType, int count, int player, point location, fixed facing)
 {
-    UnitCreate(
-        count,              // count
-        "Marine",           // unit type
-        0,                  // create flags (0 = default)
-        player,             // owning player
-        location,           // position
-        facing              // facing angle in degrees
-    );
+    UnitCreate(count, unitType, 0, player, location, facing);
 }

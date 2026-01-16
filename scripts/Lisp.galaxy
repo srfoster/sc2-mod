@@ -330,17 +330,12 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     
     // Spawn based on unit type
     if (StringContains(unitType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
-        // Base spawn - ignores count and facing parameters
-        // Log("  Spawning CommandCenter at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") with workers");
+        // Base spawn - ignores count and facing parameters (creates CommandCenter + SCVs)
         SpawnBase(player, spawnPoint);
     }
-    else if (StringContains(unitType, "Marine", c_stringAnywhere, c_stringNoCase)) {
-        // Log("  Spawning " + IntToString(count) + " Marines at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
-        SpawnMarine(count, player, spawnPoint, facing);
-    }
-    else if (StringContains(unitType, "Zealot", c_stringAnywhere, c_stringNoCase)) {
-        // Log("  Spawning " + IntToString(count) + " Zealots at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
-        SpawnZealot(count, player, spawnPoint, facing);
+    else {
+        // Generic unit spawn - works for any unit type
+        SpawnUnit(unitType, count, player, spawnPoint, facing);
     }
 }
 

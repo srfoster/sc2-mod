@@ -10,4 +10,5 @@ const string gv_configUnitsLisp =
 "      (spawn m 1 x 0 90) " +
 "      (spawn-marines (- count 1) (+ x 1))) " +
 "    (log \"Spawned Marines\"))) " +
-"(spawn-marines 10 3)";
+"(spawn-marines 10 3)" +
+"(spawn 'CommandCenter 1 0 0)";
