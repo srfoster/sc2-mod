@@ -127,34 +127,43 @@ void CreateLispUI(int player, point location)
     g_lispInputText = "(spawn 'Marine 3 10 5 90)";
     
     // Create dialog
-    DialogCreate(500, 250, c_anchorCenter, 0, 0, true);
+    DialogCreate(500, 300, c_anchorCenter, 0, 0, true);
     g_lispDialog = DialogLastCreated();
     
-    // Create text input field
+    // Create text input field (EditBox - single line but larger)
     DialogControlCreate(g_lispDialog, c_triggerControlTypeEditBox);
     g_lispTextInput = DialogControlLastCreated();
     DialogControlSetSize(g_lispTextInput, PlayerGroupSingle(player), 450, 30);
-    DialogControlSetPosition(g_lispTextInput, PlayerGroupSingle(player), c_anchorCenter, 0, -50);
+    DialogControlSetPosition(g_lispTextInput, PlayerGroupSingle(player), c_anchorCenter, 0, -60);
+    g_lispInputText = "(+ 1 2 3)"; // Initialize with example Lisp code
     DialogControlSetPropertyAsString(g_lispTextInput, c_triggerControlPropertyEditText, PlayerGroupSingle(player), g_lispInputText);
+    
+    // Create a label to show larger/formatted code (read-only display)
+    DialogControlCreate(g_lispDialog, c_triggerControlTypeLabel);
+    int g_lispDisplayLabel = DialogControlLastCreated();
+    DialogControlSetSize(g_lispDisplayLabel, PlayerGroupSingle(player), 450, 80);
+    DialogControlSetPosition(g_lispDisplayLabel, PlayerGroupSingle(player), c_anchorCenter, 0, -10);
+    DialogControlSetPropertyAsText(g_lispDisplayLabel, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Enter Lisp code above..."));
+    DialogControlSetPropertyAsString(g_lispDisplayLabel, c_triggerControlPropertyStyle, PlayerGroupSingle(player), "StandardTooltip");
     
     // Create execute button
     DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
     g_lispExecuteButton = DialogControlLastCreated();
     DialogControlSetSize(g_lispExecuteButton, PlayerGroupSingle(player), 100, 35);
-    DialogControlSetPosition(g_lispExecuteButton, PlayerGroupSingle(player), c_anchorCenter, -100, 30);
+    DialogControlSetPosition(g_lispExecuteButton, PlayerGroupSingle(player), c_anchorCenter, -100, 80);
     DialogControlSetPropertyAsText(g_lispExecuteButton, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Execute"));
     
     // Create clear button
     DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
     DialogControlSetSize(DialogControlLastCreated(), PlayerGroupSingle(player), 80, 35);
-    DialogControlSetPosition(DialogControlLastCreated(), PlayerGroupSingle(player), c_anchorCenter, 0, 30);
+    DialogControlSetPosition(DialogControlLastCreated(), PlayerGroupSingle(player), c_anchorCenter, 0, 80);
     DialogControlSetPropertyAsText(DialogControlLastCreated(), c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Clear"));
     
     // Create close button
     DialogControlCreate(g_lispDialog, c_triggerControlTypeButton);
     g_lispCloseButton = DialogControlLastCreated();
     DialogControlSetSize(g_lispCloseButton, PlayerGroupSingle(player), 80, 35);
-    DialogControlSetPosition(g_lispCloseButton, PlayerGroupSingle(player), c_anchorCenter, 100, 30);
+    DialogControlSetPosition(g_lispCloseButton, PlayerGroupSingle(player), c_anchorCenter, 100, 80);
     DialogControlSetPropertyAsText(g_lispCloseButton, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Close"));
     
     // Create UI trigger for button events
