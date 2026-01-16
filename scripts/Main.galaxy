@@ -131,10 +131,10 @@ void CreateLispUI(int player, point location)
     DialogCreate(500, 300, c_anchorCenter, 0, 0, true);
     g_lispDialog = DialogLastCreated();
     
-    // Create text input field (EditBox - single line but larger)
+    // Create text input field (EditBox - single line but taller)
     DialogControlCreate(g_lispDialog, c_triggerControlTypeEditBox);
     g_lispTextInput = DialogControlLastCreated();
-    DialogControlSetSize(g_lispTextInput, PlayerGroupSingle(player), 450, 30);
+    DialogControlSetSize(g_lispTextInput, PlayerGroupSingle(player), 450, 60);
     DialogControlSetPosition(g_lispTextInput, PlayerGroupSingle(player), c_anchorCenter, 0, -60);
     g_lispInputText = "(+ 1 2 3)"; // Initialize with example Lisp code
     DialogControlSetPropertyAsString(g_lispTextInput, c_triggerControlPropertyEditText, PlayerGroupSingle(player), g_lispInputText);
