@@ -1,0 +1,84 @@
+// Debug.galaxy
+// Debug utilities for logging and diagnostics
+
+// Helper function to log both in-game and to debug file
+void Log(string message)
+{
+    text messageText = StringToText(message);
+    TriggerDebugOutput(1, messageText, false);
+    UIDisplayMessage(PlayerGroupAll(), c_messageAreaChat, messageText);
+}
+
+// Function to dump unit locations to debug file
+void DumpUnitLocations()
+{
+    unitgroup allUnits;
+    int playerIndex;
+    int unitIndex;
+    unit currentUnit;
+    point unitPos;
+    string unitType;
+    fixed posX;
+    fixed posY;
+    int unitCount;
+    int unitTag;
+    
+    // Print header to debug file
+    TriggerDebugOutput(1, StringToText("=== Unit Dump ==="), false);
+    
+    // Loop through all players
+    playerIndex = 1;
+    while (playerIndex <= 16) {
+        allUnits = UnitGroupAlliance(
+            playerIndex,
+            c_unitAllianceAny,
+            RegionEntireMap(),
+            UnitFilter(0, 0, (1 << c_targetFilterMissile), (1 << (c_targetFilterDead - 32)) | (1 << (c_targetFilterHidden - 32))),
+            0
+        );
+        
+        unitCount = UnitGroupCount(allUnits, c_unitCountAll);
+        
+        if (unitCount > 0) {
+            TriggerDebugOutput(1, StringToText("Player " + IntToString(playerIndex) + ":"), false);
+            
+            unitIndex = 1;
+            while (unitIndex <= unitCount) {
+                currentUnit = UnitGroupUnit(allUnits, unitIndex);
+                unitPos = UnitGetPosition(currentUnit);
+                unitType = UnitGetType(currentUnit);
+                unitTag = UnitGetTag(currentUnit);
+                posX = PointGetX(unitPos);
+                posY = PointGetY(unitPos);
+                
+                TriggerDebugOutput(1, StringToText("  [" + IntToString(unitTag) + "] " + unitType + " at (" + FixedToString(posX, c_fixedPrecisionAny) + ", " + FixedToString(posY, c_fixedPrecisionAny) + ")"), false);
+                
+                unitIndex = unitIndex + 1;
+            }
+        }
+        
+        playerIndex = playerIndex + 1;
+    }
+}
+
+// Timer callback function for 20 second one-time dump
+bool Dump20SecondCallback(bool testConds, bool runActions)
+{
+    if (!runActions) {
+        return true;
+    }
+    
+    DumpUnitLocations();
+    return true;
+}
+
+// Timer callback function for periodic dumps
+bool DumpTimerCallback(bool testConds, bool runActions)
+{
+    if (!runActions) {
+        return true;
+    }
+    
+    DumpUnitLocations();
+    return true;
+}

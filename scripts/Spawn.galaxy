@@ -1,0 +1,52 @@
+// Spawn.galaxy
+// Unit and structure spawn functions
+
+// Function to spawn base structures and starting units
+void SpawnBase(int player, point location)
+{
+    // Create Command Center at starting location
+    UnitCreate(
+        1,                  // count
+        "CommandCenter",    // unit type
+        0,                  // create flags (0 = default)
+        player,             // owning player
+        location,           // position
+        270.0               // facing angle in degrees
+    );
+
+    // Create 12 SCVs around the Command Center
+    UnitCreate(
+        12,                 // count
+        "SCV",              // unit type
+        0,                  // create flags (0 = default)
+        player,             // owning player
+        location,           // position
+        270.0               // facing angle in degrees
+    );
+}
+
+// Function to spawn Zealots
+void SpawnZealot(int count, int player, point location, fixed facing)
+{
+    UnitCreate(
+        count,              // count
+        "Zealot",           // unit type
+        0,                  // create flags (0 = default)
+        player,             // owning player
+        location,           // position
+        facing              // facing angle in degrees
+    );
+}
+
+// Function to spawn Marines
+void SpawnMarine(int count, int player, point location, fixed facing)
+{
+    UnitCreate(
+        count,              // count
+        "Marine",           // unit type
+        0,                  // create flags (0 = default)
+        player,             // owning player
+        location,           // position
+        facing              // facing angle in degrees
+    );
+}

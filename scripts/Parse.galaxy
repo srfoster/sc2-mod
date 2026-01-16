@@ -281,3 +281,45 @@ string GetValue(string str, string delimiter)
     
     return StringSub(str, pos + StringLength(delimiter), StringLength(str));
 }
+
+// Skip whitespace and return next non-whitespace position
+// Returns position of first non-whitespace character, or position after end if all whitespace
+int SkipWhitespace(string str, int pos)
+{
+    int len;
+    string ch;
+    
+    len = StringLength(str);
+    
+    while (pos <= len) {
+        ch = StringSub(str, pos, pos);
+        if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") {
+            return pos;
+        }
+        pos = pos + 1;
+    }
+    
+    return pos;
+}
+
+// Read until delimiter (space, paren, or end of string)
+// Returns the end position (exclusive)
+int ReadUntilDelimiter(string str, int startPos)
+{
+    int len;
+    int pos;
+    string ch;
+    
+    len = StringLength(str);
+    pos = startPos;
+    
+    while (pos <= len) {
+        ch = StringSub(str, pos, pos);
+        if (ch == " " || ch == ")" || ch == "(" || ch == "\t" || ch == "\n" || ch == "\r") {
+            return pos;
+        }
+        pos = pos + 1;
+    }
+    
+    return pos;
+}

@@ -1,237 +1,17 @@
+// Main.galaxy
+// Main initialization
+
 // Include configuration files
-include "scripts/Config_Base.galaxy"
-include "scripts/Config_Units.galaxy"
 include "scripts/Config_Base_Lisp.galaxy"
 include "scripts/Config_Units_Lisp.galaxy"
 include "scripts/Parse.galaxy"
+include "scripts/Debug.galaxy"
+include "scripts/Spawn.galaxy"
 
-// Helper function to log both in-game and to debug file
-void Log(string message)
-{
-    text messageText = StringToText(message);
-    TriggerDebugOutput(1, messageText, false);
-    UIDisplayMessage(PlayerGroupAll(), c_messageAreaChat, messageText);
-}
-
-// Function to dump unit locations to debug file
-void DumpUnitLocations()
-{
-    unitgroup allUnits;
-    int playerIndex;
-    int unitIndex;
-    unit currentUnit;
-    point unitPos;
-    string unitType;
-    fixed posX;
-    fixed posY;
-    int unitCount;
-    int unitTag;
-    
-    // Print header to debug file
-    TriggerDebugOutput(1, StringToText("=== Unit Dump ==="), false);
-    
-    // Loop through all players
-    playerIndex = 1;
-    while (playerIndex <= 16) {
-        allUnits = UnitGroupAlliance(
-            playerIndex,
-            c_unitAllianceAny,
-            RegionEntireMap(),
-            UnitFilter(0, 0, (1 << c_targetFilterMissile), (1 << (c_targetFilterDead - 32)) | (1 << (c_targetFilterHidden - 32))),
-            0
-        );
-        
-        unitCount = UnitGroupCount(allUnits, c_unitCountAll);
-        
-        if (unitCount > 0) {
-            TriggerDebugOutput(1, StringToText("Player " + IntToString(playerIndex) + ":"), false);
-            
-            unitIndex = 1;
-            while (unitIndex <= unitCount) {
-                currentUnit = UnitGroupUnit(allUnits, unitIndex);
-                unitPos = UnitGetPosition(currentUnit);
-                unitType = UnitGetType(currentUnit);
-                unitTag = UnitGetTag(currentUnit);
-                posX = PointGetX(unitPos);
-                posY = PointGetY(unitPos);
-                
-                TriggerDebugOutput(1, StringToText("  [" + IntToString(unitTag) + "] " + unitType + " at (" + FixedToString(posX, c_fixedPrecisionAny) + ", " + FixedToString(posY, c_fixedPrecisionAny) + ")"), false);
-                
-                unitIndex = unitIndex + 1;
-            }
-        }
-        
-        playerIndex = playerIndex + 1;
-    }
-}
-
-// Timer callback function for 20 second one-time dump
-bool Dump20SecondCallback(bool testConds, bool runActions)
-{
-    if (!runActions) {
-        return true;
-    }
-    
-    DumpUnitLocations();
-    return true;
-}
-
-// Timer callback function
-bool DumpTimerCallback(bool testConds, bool runActions)
-{
-    if (!runActions) {
-        return true;
-    }
-    
-    DumpUnitLocations();
-    return true;
-}
-
-// Function to spawn base structures and starting units
-void SpawnBase(int player, point location)
-{
-    // Create Command Center at starting location
-    UnitCreate(
-        1,                  // count
-        "CommandCenter",    // unit type
-        0,                  // create flags (0 = default)
-        player,             // owning player
-        location,           // position
-        270.0               // facing angle in degrees
-    );
-
-    // Create 12 SCVs around the Command Center
-    UnitCreate(
-        12,                 // count
-        "SCV",              // unit type
-        0,                  // create flags (0 = default)
-        player,             // owning player
-        location,           // position
-        270.0               // facing angle in degrees
-    );
-}
-
-// Function to spawn Zealots
-void SpawnZealot(int count, int player, point location, fixed facing)
-{
-    UnitCreate(
-        count,              // count
-        "Zealot",           // unit type
-        0,                  // create flags (0 = default)
-        player,             // owning player
-        location,           // position
-        facing              // facing angle in degrees
-    );
-}
-
-// Function to spawn Marines
-void SpawnMarine(int count, int player, point location, fixed facing)
-{
-    UnitCreate(
-        count,              // count
-        "Marine",           // unit type
-        0,                  // create flags (0 = default)
-        player,             // owning player
-        location,           // position
-        facing              // facing angle in degrees
-    );
-}
-
-// Include Lisp evaluator (needs to be after function definitions)
+// Include Lisp evaluator (needs to be after Spawn functions)
 include "scripts/Lisp.galaxy"
 
-// Parse and spawn base from config string
-// Format: "BuildingType,X,Y,WorkerCount"
-void ParseAndSpawnBase(string config, int player, point startLocation)
-{
-    string buildingType;
-    int offsetX;
-    int offsetY;
-    int workerCount;
-    point spawnPoint;
-    
-    // Parse CSV: BuildingType,X,Y,WorkerCount
-    buildingType = GetToken(config, ",", 0);
-    offsetX = ParseInt(GetToken(config, ",", 1));
-    offsetY = ParseInt(GetToken(config, ",", 2));
-    workerCount = ParseInt(GetToken(config, ",", 3));
-    
-    Log("Parsed base config: " + buildingType + " at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") with " + IntToString(workerCount) + " workers");
-    
-    // Calculate spawn point with offset
-    spawnPoint = PointWithOffset(startLocation, offsetX, offsetY);
-    
-    // For now, only handle CommandCenter
-    if (StringContains(buildingType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
-        SpawnBase(player, spawnPoint);
-    }
-}
-
-// Parse and spawn units from config string
-// Format: "UnitType,Count,X,Y,Facing;UnitType,Count,X,Y,Facing;..."
-void ParseAndSpawnUnits(string config, int player, point startLocation)
-{
-    int numEntries;
-    int i;
-    string entry;
-    string unitType;
-    int count;
-    int offsetX;
-    int offsetY;
-    int facing;
-    point spawnPoint;
-    
-    Log("Parsing units config: " + config);
-    
-    // Debug: test basic parsing and StringSub indexing
-    Log("DEBUG: String length = " + IntToString(StringLength(config)));
-    Log("DEBUG: StringSub(0,1) = " + StringSub(config, 0, 1));
-    Log("DEBUG: StringSub(1,2) = " + StringSub(config, 1, 2));
-    Log("DEBUG: StringSub(1,7) = " + StringSub(config, 1, 7));
-    
-    // Split by semicolon to get each unit entry
-    numEntries = CountTokens(config, ";");
-    Log("Found " + IntToString(numEntries) + " unit entries");
-    
-    i = 0;
-    while (i < numEntries) {
-        entry = GetToken(config, ";", i);
-        Log("Parsing entry " + IntToString(i) + ": " + entry);
-        
-        // DEBUG: Test comma parsing
-        Log("  DEBUG: CountTokens(comma) = " + IntToString(CountTokens(entry, ",")));
-        Log("  DEBUG: Token[0] = [" + GetToken(entry, ",", 0) + "]");
-        Log("  DEBUG: Token[1] = [" + GetToken(entry, ",", 1) + "]");
-        Log("  DEBUG: Token[2] = [" + GetToken(entry, ",", 2) + "]");
-        Log("  DEBUG: ParseInt('8') = " + IntToString(ParseInt("8")));
-        Log("  DEBUG: ParseInt(Token[1]) = " + IntToString(ParseInt(GetToken(entry, ",", 1))));
-        
-        // Parse CSV: UnitType,Count,X,Y,Facing
-        unitType = GetToken(entry, ",", 0);
-        count = ParseInt(GetToken(entry, ",", 1));
-        offsetX = ParseInt(GetToken(entry, ",", 2));
-        offsetY = ParseInt(GetToken(entry, ",", 3));
-        facing = ParseInt(GetToken(entry, ",", 4));
-        
-        Log("  -> " + unitType + ": " + IntToString(count) + " at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
-        
-        // Calculate spawn point with offset
-        spawnPoint = PointWithOffset(startLocation, offsetX, offsetY);
-        
-        // Spawn based on unit type
-        if (StringContains(unitType, "Marine", c_stringAnywhere, c_stringNoCase)) {
-            SpawnMarine(count, player, spawnPoint, facing);
-        }
-        else if (StringContains(unitType, "Zealot", c_stringAnywhere, c_stringNoCase)) {
-            SpawnZealot(count, player, spawnPoint, facing);
-        }
-        
-        i = i + 1;
-    }
-    
-    Log("Unit parsing complete");
-}
-
+// Main initialization
 void Main_init()
 {
     int   lp_player;
@@ -239,35 +19,12 @@ void Main_init()
 
     lp_player = 1;
     
-    // Enable debug output to file
     TriggerDebugSetTypeFile(1, "config_test.txt");
-
-    // Make sure game speed isn't locked
     GameSetSpeedLocked(false);
-
-    // Set to Faster
     GameSetSpeedValue(c_gameSpeedFaster);
 
-    Log("=== Main_Init start ===");
-    Log(">>> Main_Init() begin!");
-
-    // Get player start location
     lp_start = PlayerStartLocation(lp_player);
 
-    // Parse and spawn from config strings (CSV format)
-    Log("=== Parsing Base Config (CSV) ===");
-    ParseAndSpawnBase(gv_configBase, lp_player, lp_start);
-    
-    Log("=== Parsing Units Config (CSV) ===");
-    ParseAndSpawnUnits(gv_configUnits, lp_player, lp_start);
-
-    // Test Lisp evaluator with s-expression configs
-    Log("=== Testing Lisp Evaluator ===");
-    Log("Base config: " + gv_configBaseLisp);
     EvalLisp(gv_configBaseLisp, lp_player, lp_start);
-    
-    Log("Units config: " + gv_configUnitsLisp);
     EvalLisp(gv_configUnitsLisp, lp_player, lp_start);
-
-    Log(">>> Main_Init() end!");
 }
