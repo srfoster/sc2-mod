@@ -347,8 +347,9 @@ string EvalSpawn(string sexpr, int player, point startLocation)
     command = GetSExprToken(sexpr, 0);
     tokenCount = CountSExprTokens(sexpr);
     
-    // Log("Evaluating s-expr: " + sexpr);
-    // Log("  Command: " + command);
+    Log("Evaluating s-expr: " + sexpr);
+    Log("  Command: " + command);
+    Log("  Token count: " + IntToString(tokenCount));
     
     if (command != "spawn") {
         Log("  ERROR: Expected 'spawn' command, got '" + command + "'");
@@ -373,38 +374,40 @@ string EvalSpawn(string sexpr, int player, point startLocation)
     // So tokenCount >= 3 means we have at least the unit type
     
     // Count (default: 1)
-    if (tokenCount >= 4) {
+    if (tokenCount >= 3) {
         count = ParseInt(LookupVariable(GetSExprToken(sexpr, 2)));
     } else {
         count = 1;
     }
     
     // OffsetX (default: 0)
-    if (tokenCount >= 5) {
+    if (tokenCount >= 4) {
         offsetX = ParseInt(LookupVariable(GetSExprToken(sexpr, 3)));
     } else {
         offsetX = 0;
     }
     
     // OffsetY (default: 0)
-    if (tokenCount >= 6) {
+    if (tokenCount >= 5) {
         offsetY = ParseInt(LookupVariable(GetSExprToken(sexpr, 4)));
     } else {
         offsetY = 0;
     }
     
     // Facing (default: 90)
-    if (tokenCount >= 7) {
+    if (tokenCount >= 6) {
         facing = ParseInt(LookupVariable(GetSExprToken(sexpr, 5)));
     } else {
         facing = 90;
     }
     
     // Player (default: 1)
-    if (tokenCount >= 8) {
+    if (tokenCount >= 7) {
         targetPlayer = ParseInt(LookupVariable(GetSExprToken(sexpr, 6)));
+        Log("  Using player from token 6: " + IntToString(targetPlayer));
     } else {
         targetPlayer = 1;
+        Log("  Using default player: 1 (tokenCount=" + IntToString(tokenCount) + ")");
     }
     
     // Calculate spawn point
