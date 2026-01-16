@@ -31,7 +31,7 @@ void DefineVariable(string name, string value)
     while (i < gv_symbolCount) {
         if (gv_symbolNames[i] == name) {
             gv_symbolValues[i] = value;
-            Log("  Updated variable: " + name + " = " + value);
+            // Log("  Updated variable: " + name + " = " + value);
             return;
         }
         i = i + 1;
@@ -41,7 +41,7 @@ void DefineVariable(string name, string value)
     if (gv_symbolCount < c_maxSymbols) {
         gv_symbolNames[gv_symbolCount] = name;
         gv_symbolValues[gv_symbolCount] = value;
-        Log("  Defined variable: " + name + " = " + value);
+        // Log("  Defined variable: " + name + " = " + value);
         gv_symbolCount = gv_symbolCount + 1;
     }
     else {
@@ -78,7 +78,7 @@ void DefineFunction(string name, string params, string body)
         if (gv_functionNames[i] == name) {
             gv_functionParams[i] = params;
             gv_functionBodies[i] = body;
-            Log("  Updated function: " + name + "(" + params + ")");
+            // Log("  Updated function: " + name + "(" + params + ")");
             return;
         }
         i = i + 1;
@@ -89,7 +89,7 @@ void DefineFunction(string name, string params, string body)
         gv_functionNames[gv_functionCount] = name;
         gv_functionParams[gv_functionCount] = params;
         gv_functionBodies[gv_functionCount] = body;
-        Log("  Defined function: " + name + "(" + params + ")");
+        // Log("  Defined function: " + name + "(" + params + ")");
         gv_functionCount = gv_functionCount + 1;
     }
     else {
@@ -184,8 +184,20 @@ string GetSExprToken(string sexpr, int tokenIndex)
         // Found start of token
         if (currentToken == tokenIndex) {
             tokenStart = pos;
+            // Check if token is a quoted string
+            if (StringSub(sexpr, tokenStart, tokenStart) == "\"") {
+                // Find closing quote
+                tokenEnd = tokenStart + 1;
+                while (tokenEnd <= len && StringSub(sexpr, tokenEnd, tokenEnd) != "\"") {
+                    tokenEnd = tokenEnd + 1;
+                }
+                if (tokenEnd <= len) {
+                    tokenEnd = tokenEnd + 1;  // Include closing quote
+                }
+                return StringSub(sexpr, tokenStart, tokenEnd - 1);
+            }
             // Check if token is a nested s-expression
-            if (StringSub(sexpr, tokenStart, tokenStart) == "(") {
+            else if (StringSub(sexpr, tokenStart, tokenStart) == "(") {
                 tokenEnd = FindMatchingParen(sexpr, tokenStart);
                 return StringSub(sexpr, tokenStart, tokenEnd);
             }
@@ -196,7 +208,17 @@ string GetSExprToken(string sexpr, int tokenIndex)
         }
         
         // Skip to next token
-        if (StringSub(sexpr, pos, pos) == "(") {
+        if (StringSub(sexpr, pos, pos) == "\"") {
+            // Skip quoted string
+            pos = pos + 1;
+            while (pos <= len && StringSub(sexpr, pos, pos) != "\"") {
+                pos = pos + 1;
+            }
+            if (pos <= len) {
+                pos = pos + 1;  // Skip closing quote
+            }
+        }
+        else if (StringSub(sexpr, pos, pos) == "(") {
             // Skip nested s-expression
             pos = FindMatchingParen(sexpr, pos) + 1;
         }
@@ -236,8 +258,19 @@ int CountSExprTokens(string sexpr)
         // Found a token
         count = count + 1;
         
-        // Skip token (handle nested s-expressions)
-        if (StringSub(sexpr, pos, pos) == "(") {
+        // Skip token
+        if (StringSub(sexpr, pos, pos) == "\"") {
+            // Skip quoted string
+            pos = pos + 1;
+            while (pos <= len && StringSub(sexpr, pos, pos) != "\"") {
+                pos = pos + 1;
+            }
+            if (pos <= len) {
+                pos = pos + 1;  // Skip closing quote
+            }
+        }
+        else if (StringSub(sexpr, pos, pos) == "(") {
+            // Skip nested s-expression
             pos = FindMatchingParen(sexpr, pos) + 1;
         }
         else {
@@ -265,8 +298,8 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     // Parse the s-expression
     command = GetSExprToken(sexpr, 0);
     
-    Log("Evaluating s-expr: " + sexpr);
-    Log("  Command: " + command);
+    // Log("Evaluating s-expr: " + sexpr);
+    // Log("  Command: " + command);
     
     if (command != "spawn") {
         Log("  ERROR: Expected 'spawn' command, got '" + command + "'");
@@ -283,7 +316,7 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     else {
         // Look up variable in symbol table
         unitType = LookupVariable(unitType);
-        Log("  Looked up variable: " + GetSExprToken(sexpr, 1) + " -> " + unitType);
+        // Log("  Looked up variable: " + GetSExprToken(sexpr, 1) + " -> " + unitType);
     }
     
     // Parse numeric arguments (look up variables first)
@@ -298,111 +331,106 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     // Spawn based on unit type
     if (StringContains(unitType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
         // Base spawn - ignores count and facing parameters
-        Log("  Spawning CommandCenter at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") with workers");
+        // Log("  Spawning CommandCenter at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") with workers");
         SpawnBase(player, spawnPoint);
     }
     else if (StringContains(unitType, "Marine", c_stringAnywhere, c_stringNoCase)) {
-        Log("  Spawning " + IntToString(count) + " Marines at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
+        // Log("  Spawning " + IntToString(count) + " Marines at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
         SpawnMarine(count, player, spawnPoint, facing);
     }
     else if (StringContains(unitType, "Zealot", c_stringAnywhere, c_stringNoCase)) {
-        Log("  Spawning " + IntToString(count) + " Zealots at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
+        // Log("  Spawning " + IntToString(count) + " Zealots at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
         SpawnZealot(count, player, spawnPoint, facing);
     }
 }
 
 // Evaluate a define command from s-expression
-// Example: "(define m 'Marine)"
+// Example: "(define m 'Marine)" or "(define (funcname params) body)"
 void EvalDefine(string sexpr)
 {
     string command;
     string varName;
     string varValue;
+    string funcName;
+    string params;
+    string body;
+    int bodyStart;
+    int i;
+    int len;
+    int numParams;
+    int paramIdx;
     
     // Parse the s-expression
     command = GetSExprToken(sexpr, 0);
     
-    Log("Evaluating s-expr: " + sexpr);
-    Log("  Command: " + command);
+    // Log("Evaluating s-expr: " + sexpr);
+    // Log("  Command: " + command);
     
     if (command != "define") {
         Log("  ERROR: Expected 'define' command, got '" + command + "'");
         return;
     }
     
-    // Get variable name and value
+    // Get the second token - could be a variable name or function definition (name params)
     varName = GetSExprToken(sexpr, 1);
-    varValue = GetSExprToken(sexpr, 2);
     
-    // Remove leading quote from value if present
-    if (StartsWith(varValue, "'")) {
-        varValue = StringSub(varValue, 2, StringLength(varValue));
+    // Check if it's a function definition: (define (funcname params) body)
+    if (StartsWith(varName, "(")) {
+        // Function definition: extract name and params from the s-expression
+        
+        // Extract function name (first token of the s-expr)
+        funcName = GetSExprToken(varName, 0);
+        
+        // Extract parameters (remaining tokens, space-separated)
+        params = "";
+        numParams = CountSExprTokens(varName);
+        paramIdx = 1;
+        while (paramIdx < numParams) {
+            if (paramIdx > 1) {
+                params = params + " ";
+            }
+            params = params + GetSExprToken(varName, paramIdx);
+            paramIdx = paramIdx + 1;
+        }
+        params = Trim(params);
+        
+        // Log("  Function definition: " + funcName + "(" + params + ")");
+        
+        // Get function body - token 2 onwards
+        i = 2;  // Skip opening paren
+        i = SkipWhitespace(sexpr, i);
+        i = ReadUntilDelimiter(sexpr, i);  // Skip "define"
+        i = SkipWhitespace(sexpr, i);
+        
+        // Skip the (funcname params) s-expression
+        if (StringSub(sexpr, i, i) == "(") {
+            i = FindMatchingParen(sexpr, i) + 1;
+        }
+        
+        i = SkipWhitespace(sexpr, i);
+        bodyStart = i;
+        
+        // Body goes to the end of the s-expression (before closing paren)
+        len = StringLength(sexpr);
+        body = StringSub(sexpr, bodyStart, len - 1);  // -1 to exclude closing paren
+        body = Trim(body);
+        
+        // Log("  Function body: " + body);
+        
+        DefineFunction(funcName, params, body);
     }
-    
-    // Define the variable
-    DefineVariable(varName, varValue);
-}
-
-// Evaluate a defun command from s-expression
-// Example: "(defun spawn-marines (count x) (spawn m 1 x 0 90) (spawn-marines (- count 1) (+ x 1)))"
-void EvalDefun(string sexpr)
-{
-    string command;
-    string funcName;
-    string paramsExpr;
-    string body;
-    string params;
-    int bodyStart;
-    int i;
-    int len;
-    
-    command = GetSExprToken(sexpr, 0);
-    
-    Log("Evaluating s-expr: " + sexpr);
-    
-    if (command != "defun") {
-        Log("  ERROR: Expected 'defun' command, got '" + command + "'");
-        return;
+    else {
+        // Variable definition: (define var value)
+        varValue = GetSExprToken(sexpr, 2);
+        
+        // Remove leading quote from value if present
+        if (StartsWith(varValue, "'")) {
+            varValue = StringSub(varValue, 2, StringLength(varValue));
+        }
+        
+        // Define the variable
+        DefineVariable(varName, varValue);
     }
-    
-    // Get function name
-    funcName = GetSExprToken(sexpr, 1);
-    
-    // Get parameter list (should be like "(count x)")
-    paramsExpr = GetSExprToken(sexpr, 2);
-    Log("  Parameter expression: '" + paramsExpr + "'");
-    
-    // Extract parameter names from paramsExpr - strip outer parens
-    params = StringSub(paramsExpr, 2, StringLength(paramsExpr) - 1);
-    Log("  Parameters before trim: '" + params + "'");
-    params = Trim(params);
-    Log("  Parameters after trim: '" + params + "'");
-    
-    // Get function body - everything after parameters
-    // Find where token 2 ends and body begins
-    i = 2;  // Skip opening paren
-    i = SkipWhitespace(sexpr, i);
-    i = ReadUntilDelimiter(sexpr, i);  // Skip "defun"
-    i = SkipWhitespace(sexpr, i);
-    i = ReadUntilDelimiter(sexpr, i);  // Skip function name
-    i = SkipWhitespace(sexpr, i);
-    
-    // Skip parameter list
-    if (StringSub(sexpr, i, i) == "(") {
-        i = FindMatchingParen(sexpr, i) + 1;
-    }
-    
-    i = SkipWhitespace(sexpr, i);
-    bodyStart = i;
-    
-    // Body goes to the end of the s-expression (before closing paren)
-    len = StringLength(sexpr);
-    body = StringSub(sexpr, bodyStart, len - 1);  // -1 to exclude closing paren
-    body = Trim(body);
-    
-    Log("  Function body: " + body);
-    
-    DefineFunction(funcName, params, body);
 }
 
 // Evaluate arithmetic expression (+ a b) or (- a b)
@@ -481,6 +509,51 @@ bool EvalComparison(string sexpr)
 void EvalExpression(string sexpr, int player, point startLocation);
 void EvalLisp(string code, int player, point startLocation);
 
+// Evaluate a begin block - evaluates multiple expressions in sequence
+// Example: "(begin (spawn m 1 0 0 90) (spawn m 1 1 0 90))"
+void EvalBegin(string sexpr, int player, point startLocation)
+{
+    int numExprs;
+    int i;
+    string expr;
+    
+    // Log("Evaluating begin block");
+    
+    // Count how many expressions are in the begin block
+    numExprs = CountSExprTokens(sexpr);
+    
+    // Evaluate each expression (skip token 0 which is "begin")
+    i = 1;
+    while (i < numExprs) {
+        expr = GetSExprToken(sexpr, i);
+        // Log("  Begin expression " + IntToString(i) + ": " + expr);
+        EvalExpression(expr, player, startLocation);
+        i = i + 1;
+    }
+}
+
+// Evaluate a log command - logs a message
+// Example: "(log \"Hello World\")"
+void EvalLog(string sexpr)
+{
+    string message;
+    
+    // Get the message (token 1)
+    message = GetSExprToken(sexpr, 1);
+    
+    // Remove quotes if present
+    if (StartsWith(message, "\"") && EndsWith(message, "\"")) {
+        message = StringSub(message, 2, StringLength(message) - 1);
+    }
+    
+    // Look up variable if it's not a string literal
+    if (!StartsWith(GetSExprToken(sexpr, 1), "\"")) {
+        message = LookupVariable(message);
+    }
+    
+    Log(message);
+}
+
 // Evaluate an if expression: (if condition then-expr else-expr)
 string EvalIf(string sexpr, int player, point startLocation)
 {
@@ -553,12 +626,12 @@ string EvalIf(string sexpr, int player, point startLocation)
     
     // Evaluate appropriate branch
     if (condition) {
-        Log("  If condition true, evaluating: " + thenExpr);
+        // Log("  If condition true, evaluating: " + thenExpr);
         EvalExpression(thenExpr, player, startLocation);
         return "true";
     }
     else if (StringLength(elseExpr) > 0) {
-        Log("  If condition false, evaluating: " + elseExpr);
+        // Log("  If condition false, evaluating: " + elseExpr);
         EvalExpression(elseExpr, player, startLocation);
         return "false";
     }
@@ -587,7 +660,7 @@ void CallFunction(string funcName, string argsStr, int player, point startLocati
     
     // Check recursion depth
     gv_recursionDepth = gv_recursionDepth + 1;
-    Log("  Recursion depth: " + IntToString(gv_recursionDepth));
+    // Log("  Recursion depth: " + IntToString(gv_recursionDepth));
     if (gv_recursionDepth > c_maxRecursionDepth) {
         Log("  ERROR: Max recursion depth exceeded");
         gv_recursionDepth = gv_recursionDepth - 1;
@@ -597,43 +670,31 @@ void CallFunction(string funcName, string argsStr, int player, point startLocati
     params = gv_functionParams[funcIdx];
     body = gv_functionBodies[funcIdx];
     
-    Log("  Calling function: " + funcName + " with args: " + argsStr);
+    // Log("  Calling function: " + funcName + " with args: " + argsStr);
     
     // Save current symbol table size
     oldSymbolCount = gv_symbolCount;
-    Log("  Saved symbol count: " + IntToString(oldSymbolCount));
+    // Log("  Saved symbol count: " + IntToString(oldSymbolCount));
     
     // Bind parameters to arguments
     numParams = CountTokens(params, " ");
     numArgs = CountTokens(argsStr, " ");
-    Log("  Binding " + IntToString(numParams) + " params to " + IntToString(numArgs) + " args");
+    // Log("  Binding " + IntToString(numParams) + " params to " + IntToString(numArgs) + " args");
     
     i = 0;
     while (i < numParams && i < numArgs) {
         paramName = GetToken(params, " ", i);
         argValue = GetToken(argsStr, " ", i);
         
-        // Evaluate argument if it's an expression
-        argValue = Trim(argValue);
-        if (StartsWith(argValue, "(")) {
-            // Evaluate nested expression
-            if (StartsWith(argValue, "(+") || StartsWith(argValue, "(-") || StartsWith(argValue, "(*") || StartsWith(argValue, "(/")) {
-                argValue = IntToString(EvalArithmetic(argValue));
-            }
-        }
-        else {
-            // Look up variable
-            argValue = LookupVariable(argValue);
-        }
-        
-        DefineVariable(paramName, argValue);
-        Log("    Bound parameter: " + paramName + " = " + argValue);
+        // Arguments are already evaluated, just bind them
+        DefineVariable(paramName, Trim(argValue));
+        // Log("    Bound parameter: " + paramName + " = " + argValue);
         
         i = i + 1;
     }
     
     // Evaluate function body (may contain multiple expressions)
-    Log("  Evaluating body: " + body);
+    // Log("  Evaluating body: " + body);
     EvalLisp(body, player, startLocation);
     
     // Restore symbol table (pop local variables)
@@ -664,8 +725,11 @@ void EvalExpression(string sexpr, int player, point startLocation)
     if (command == "define") {
         EvalDefine(sexpr);
     }
-    else if (command == "defun") {
-        EvalDefun(sexpr);
+    else if (command == "begin") {
+        EvalBegin(sexpr, player, startLocation);
+    }
+    else if (command == "log") {
+        EvalLog(sexpr);
     }
     else if (command == "spawn") {
         EvalSpawn(sexpr, player, startLocation);
@@ -683,12 +747,35 @@ void EvalExpression(string sexpr, int player, point startLocation)
         // Check if it's a function call
         funcIdx = LookupFunction(command);
         if (funcIdx != -1) {
-            // Build space-separated args string
+            // Build space-separated args string, evaluating expressions
             numTokens = CountSExprTokens(sexpr);
             argsStr = "";
             i = 1;
             while (i < numTokens) {
                 arg = GetSExprToken(sexpr, i);
+                
+                // Evaluate argument if it's an expression
+                arg = Trim(arg);
+                if (StartsWith(arg, "(")) {
+                    // Evaluate nested expression
+                    if (StartsWith(arg, "(+") || StartsWith(arg, "(-") || StartsWith(arg, "(*") || StartsWith(arg, "(/")) {
+                        arg = IntToString(EvalArithmetic(arg));
+                    }
+                    else if (StartsWith(arg, "(>") || StartsWith(arg, "(<") || StartsWith(arg, "(=")) {
+                        if (EvalComparison(arg)) {
+                            arg = "1";
+                        }
+                        else {
+                            arg = "0";
+                        }
+                    }
+                    // Other expressions could be function calls or other forms
+                }
+                else {
+                    // Look up variable value
+                    arg = LookupVariable(arg);
+                }
+                
                 if (i > 1) {
                     argsStr = argsStr + " ";
                 }
@@ -717,7 +804,7 @@ void EvalLisp(string code, int player, point startLocation)
     len = StringLength(code);
     pos = 1;
     
-    Log("=== Evaluating Lisp code ===");
+    // Log("=== Evaluating Lisp code ===");
     
     while (pos <= len) {
         // Skip whitespace
@@ -754,5 +841,5 @@ void EvalLisp(string code, int player, point startLocation)
         }
     }
     
-    Log("=== Lisp evaluation complete ===");
+    //Log("=== Lisp evaluation complete ===");
 }

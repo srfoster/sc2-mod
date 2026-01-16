@@ -4,5 +4,10 @@
 
 const string gv_configUnitsLisp = 
 "(define m 'Marine) " +
-"(defun test (x) (spawn m 1 x 0 90)) " +
-"(test 7)";
+"(define (spawn-marines count x) " +
+"  (if (> count 0) " +
+"    (begin " +
+"      (spawn m 1 x 0 90) " +
+"      (spawn-marines (- count 1) (+ x 1))) " +
+"    (log \"Spawned Marines\"))) " +
+"(spawn-marines 10 3)";
