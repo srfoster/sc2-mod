@@ -1,0 +1,283 @@
+// Parse.galaxy
+// String parsing utilities for Galaxy script
+// Galaxy has no split() function, so we build our own using StringSub
+
+// Find the position of a delimiter string in a string, starting from startIndex
+// Returns -1 if not found
+// Note: Galaxy uses 1-based indexing, so startIndex 1 = first character
+int FindString(string str, string search, int startIndex)
+{
+    int len;
+    int searchLen;
+    int i;
+    string sub;
+    
+    len = StringLength(str);
+    searchLen = StringLength(search);
+    
+    if (searchLen == 0 || startIndex > len) {
+        return -1;
+    }
+    
+    i = startIndex;
+    while (i <= len - searchLen + 1) {
+        sub = StringSub(str, i, i + searchLen - 1);
+        if (sub == search) {
+            return i;
+        }
+        i = i + 1;
+    }
+    
+    return -1;
+}
+
+// Count how many tokens are in a delimited string
+// Example: CountTokens("a,b,c", ",") returns 3
+int CountTokens(string str, string delimiter)
+{
+    int count;
+    int pos;
+    int searchStart;
+    
+    if (StringLength(str) == 0) {
+        return 0;
+    }
+    
+    count = 1;  // At least one token if string is non-empty
+    searchStart = 1;  // 1-based indexing
+    
+    while (true) {
+        pos = FindString(str, delimiter, searchStart);
+        if (pos == -1) {
+            break;
+        }
+        count = count + 1;
+        searchStart = pos + StringLength(delimiter);
+    }
+    
+    return count;
+}
+
+// Get the Nth token from a delimited string (0-indexed)
+// Example: GetToken("a,b,c", ",", 1) returns "b"
+// Returns empty string if index out of bounds
+string GetToken(string str, string delimiter, int index)
+{
+    int tokenCount;
+    int currentToken;
+    int searchStart;
+    int pos;
+    int tokenStart;
+    int tokenEnd;
+    int delimLen;
+    
+    if (StringLength(str) == 0 || index < 0) {
+        return "";
+    }
+    
+    delimLen = StringLength(delimiter);
+    currentToken = 0;
+    searchStart = 1;  // 1-based indexing
+    tokenStart = 1;
+    
+    // Find the start of the desired token
+    while (currentToken < index) {
+        pos = FindString(str, delimiter, searchStart);
+        if (pos == -1) {
+            // Token doesn't exist
+            return "";
+        }
+        tokenStart = pos + delimLen;
+        searchStart = pos + delimLen;
+        currentToken = currentToken + 1;
+    }
+    
+    // Find the end of the token
+    pos = FindString(str, delimiter, tokenStart);
+    if (pos == -1) {
+        // Last token - goes to end of string
+        tokenEnd = StringLength(str);
+    } else {
+        tokenEnd = pos - 1;  // End is inclusive, so stop before delimiter
+    }
+    
+    return StringSub(str, tokenStart, tokenEnd);
+}
+
+// Parse an integer from a string token
+// Returns 0 if invalid (Galaxy has no error handling)
+int ParseInt(string str)
+{
+    int result;
+    int len;
+    int i;
+    int digit;
+    int isNegative;
+    int startIndex;
+    string currentChar;
+    
+    len = StringLength(str);
+    if (len == 0) {
+        return 0;
+    }
+    
+    result = 0;
+    isNegative = 0;
+    startIndex = 1;  // 1-based indexing
+    
+    // Check for negative sign
+    currentChar = StringSub(str, 1, 1);  // 1-based indexing
+    if (currentChar == "-") {
+        isNegative = 1;
+        startIndex = 2;  // Start at position 2 (second character)
+    }
+    
+    // Parse digits
+    i = startIndex;
+    while (i <= len) {  // <= because 1-based and inclusive
+        currentChar = StringSub(str, i, i);  // Get single character
+        
+        // Convert char to digit (ASCII '0' = 48)
+        if (currentChar == "0") { digit = 0; }
+        else if (currentChar == "1") { digit = 1; }
+        else if (currentChar == "2") { digit = 2; }
+        else if (currentChar == "3") { digit = 3; }
+        else if (currentChar == "4") { digit = 4; }
+        else if (currentChar == "5") { digit = 5; }
+        else if (currentChar == "6") { digit = 6; }
+        else if (currentChar == "7") { digit = 7; }
+        else if (currentChar == "8") { digit = 8; }
+        else if (currentChar == "9") { digit = 9; }
+        else {
+            // Invalid character, return what we have
+            break;
+        }
+        
+        result = result * 10 + digit;
+        i = i + 1;
+    }
+    
+    if (isNegative == 1) {
+        result = -result;
+    }
+    
+    return result;
+}
+
+// Parse a fixed (real number) from a string token
+// Simple version - just uses StringToFixed if available, otherwise converts to int
+fixed ParseFixed(string str)
+{
+    // Try to use built-in conversion if it exists
+    // Otherwise fall back to integer conversion
+    return ParseInt(str);
+}
+
+// === HIGH-LEVEL PARSING FUNCTIONS ===
+
+// Trim whitespace from start and end of string
+string Trim(string str)
+{
+    int len;
+    int start;
+    int end;
+    string ch;
+    
+    len = StringLength(str);
+    if (len == 0) {
+        return "";
+    }
+    
+    // Find first non-space character (1-based indexing)
+    start = 1;
+    while (start <= len) {
+        ch = StringSub(str, start, start);
+        if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") {
+            break;
+        }
+        start = start + 1;
+    }
+    
+    // If all whitespace, return empty
+    if (start > len) {
+        return "";
+    }
+    
+    // Find last non-space character
+    end = len;
+    while (end >= start) {
+        ch = StringSub(str, end, end);
+        if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") {
+            break;
+        }
+        end = end - 1;
+    }
+    
+    return StringSub(str, start, end);
+}
+
+// Check if string starts with prefix
+bool StartsWith(string str, string prefix)
+{
+    int len;
+    int prefixLen;
+    string sub;
+    
+    len = StringLength(str);
+    prefixLen = StringLength(prefix);
+    
+    if (prefixLen > len) {
+        return false;
+    }
+    
+    sub = StringSub(str, 1, prefixLen);
+    return sub == prefix;
+}
+
+// Check if string ends with suffix
+bool EndsWith(string str, string suffix)
+{
+    int len;
+    int suffixLen;
+    int startPos;
+    string sub;
+    
+    len = StringLength(str);
+    suffixLen = StringLength(suffix);
+    
+    if (suffixLen > len) {
+        return false;
+    }
+    
+    startPos = len - suffixLen + 1;
+    sub = StringSub(str, startPos, len);
+    return sub == suffix;
+}
+
+// Extract the key from a "key=value" string
+// Returns everything before the first occurrence of delimiter
+string GetKey(string str, string delimiter)
+{
+    int pos;
+    
+    pos = FindString(str, delimiter, 1);
+    if (pos == -1) {
+        return str;  // No delimiter found, return whole string
+    }
+    
+    return StringSub(str, 1, pos - 1);
+}
+
+// Extract the value from a "key=value" string
+// Returns everything after the first occurrence of delimiter
+string GetValue(string str, string delimiter)
+{
+    int pos;
+    
+    pos = FindString(str, delimiter, 1);
+    if (pos == -1) {
+        return "";  // No delimiter found, return empty
+    }
+    
+    return StringSub(str, pos + StringLength(delimiter), StringLength(str));
+}

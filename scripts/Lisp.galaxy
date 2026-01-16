@@ -1,0 +1,271 @@
+// Lisp.galaxy
+// Simple Lisp reader/evaluator for s-expression configuration
+// Based on Racket-style syntax
+
+// === LEXER ===
+
+// Skip whitespace and return next non-whitespace position
+int SkipWhitespace(string str, int pos)
+{
+    int len;
+    string ch;
+    
+    len = StringLength(str);
+    
+    while (pos <= len) {
+        ch = StringSub(str, pos, pos);
+        if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") {
+            return pos;
+        }
+        pos = pos + 1;
+    }
+    
+    return pos;
+}
+
+// Read until delimiter (space, paren, or end of string)
+// Returns the end position (exclusive)
+int ReadUntilDelimiter(string str, int startPos)
+{
+    int len;
+    int pos;
+    string ch;
+    
+    len = StringLength(str);
+    pos = startPos;
+    
+    while (pos <= len) {
+        ch = StringSub(str, pos, pos);
+        if (ch == " " || ch == ")" || ch == "(" || ch == "\t" || ch == "\n" || ch == "\r") {
+            return pos;
+        }
+        pos = pos + 1;
+    }
+    
+    return pos;
+}
+
+// === PARSER ===
+
+// Find the matching closing paren for an opening paren at startPos
+// Returns position of closing paren, or -1 if not found
+int FindMatchingParen(string str, int startPos)
+{
+    int len;
+    int pos;
+    int depth;
+    string ch;
+    
+    len = StringLength(str);
+    pos = startPos + 1;  // Start after opening paren
+    depth = 1;
+    
+    while (pos <= len && depth > 0) {
+        ch = StringSub(str, pos, pos);
+        if (ch == "(") {
+            depth = depth + 1;
+        }
+        else if (ch == ")") {
+            depth = depth - 1;
+        }
+        pos = pos + 1;
+    }
+    
+    if (depth == 0) {
+        return pos - 1;  // Return position of closing paren
+    }
+    
+    return -1;  // No matching paren found
+}
+
+// Extract the Nth token from within an s-expression (0-indexed)
+// s-expression should be like "(spawn 'Marine 8 3 0 90)"
+// Token 0 = "spawn", Token 1 = "'Marine", Token 2 = "8", etc.
+string GetSExprToken(string sexpr, int tokenIndex)
+{
+    int pos;
+    int currentToken;
+    int tokenStart;
+    int tokenEnd;
+    int len;
+    string ch;
+    
+    len = StringLength(sexpr);
+    
+    // Skip opening paren (position 1 is '(', so start at 2)
+    pos = 2;
+    pos = SkipWhitespace(sexpr, pos);
+    
+    currentToken = 0;
+    
+    while (pos <= len) {
+        // Skip whitespace
+        pos = SkipWhitespace(sexpr, pos);
+        
+        if (pos > len) {
+            break;
+        }
+        
+        ch = StringSub(sexpr, pos, pos);
+        
+        if (ch == ")") {
+            break;  // End of s-expression
+        }
+        
+        // Found start of token
+        if (currentToken == tokenIndex) {
+            tokenStart = pos;
+            tokenEnd = ReadUntilDelimiter(sexpr, tokenStart);
+            return StringSub(sexpr, tokenStart, tokenEnd - 1);
+        }
+        
+        // Skip to next token
+        pos = ReadUntilDelimiter(sexpr, pos);
+        currentToken = currentToken + 1;
+    }
+    
+    return "";  // Token not found
+}
+
+// Count how many tokens are in an s-expression (excluding parens)
+int CountSExprTokens(string sexpr)
+{
+    int pos;
+    int count;
+    int len;
+    string ch;
+    
+    len = StringLength(sexpr);
+    pos = 1;  // Skip opening paren
+    count = 0;
+    
+    while (pos <= len) {
+        pos = SkipWhitespace(sexpr, pos);
+        
+        if (pos > len) {
+            break;
+        }
+        
+        ch = StringSub(sexpr, pos, pos);
+        if (ch == ")") {
+            break;
+        }
+        
+        // Found a token
+        count = count + 1;
+        pos = ReadUntilDelimiter(sexpr, pos);
+    }
+    
+    return count;
+}
+
+// === EVALUATOR ===
+
+// Evaluate a spawn command from s-expression
+// Example: "(spawn 'Marine 8 3 0 90)"
+void EvalSpawn(string sexpr, int player, point startLocation)
+{
+    string command;
+    string unitType;
+    int count;
+    int offsetX;
+    int offsetY;
+    int facing;
+    point spawnPoint;
+    
+    // Parse the s-expression
+    command = GetSExprToken(sexpr, 0);
+    
+    Log("Evaluating s-expr: " + sexpr);
+    Log("  Command: " + command);
+    
+    if (command != "spawn") {
+        Log("  ERROR: Expected 'spawn' command, got '" + command + "'");
+        return;
+    }
+    
+    // Get unit type (with quote)
+    unitType = GetSExprToken(sexpr, 1);
+    
+    // Remove leading quote if present
+    if (StartsWith(unitType, "'")) {
+        unitType = StringSub(unitType, 2, StringLength(unitType));
+    }
+    
+    // Parse numeric arguments
+    count = ParseInt(GetSExprToken(sexpr, 2));
+    offsetX = ParseInt(GetSExprToken(sexpr, 3));
+    offsetY = ParseInt(GetSExprToken(sexpr, 4));
+    facing = ParseInt(GetSExprToken(sexpr, 5));
+    
+    // Calculate spawn point
+    spawnPoint = PointWithOffset(startLocation, offsetX, offsetY);
+    
+    // Spawn based on unit type
+    if (StringContains(unitType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
+        // Base spawn - ignores count and facing parameters
+        Log("  Spawning CommandCenter at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") with workers");
+        SpawnBase(player, spawnPoint);
+    }
+    else if (StringContains(unitType, "Marine", c_stringAnywhere, c_stringNoCase)) {
+        Log("  Spawning " + IntToString(count) + " Marines at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
+        SpawnMarine(count, player, spawnPoint, facing);
+    }
+    else if (StringContains(unitType, "Zealot", c_stringAnywhere, c_stringNoCase)) {
+        Log("  Spawning " + IntToString(count) + " Zealots at (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") facing " + IntToString(facing));
+        SpawnZealot(count, player, spawnPoint, facing);
+    }
+}
+
+// Evaluate all s-expressions in a string
+void EvalLisp(string code, int player, point startLocation)
+{
+    int pos;
+    int parenStart;
+    int parenEnd;
+    int len;
+    string ch;
+    string sexpr;
+    
+    len = StringLength(code);
+    pos = 1;
+    
+    Log("=== Evaluating Lisp code ===");
+    
+    while (pos <= len) {
+        // Skip whitespace
+        pos = SkipWhitespace(code, pos);
+        
+        if (pos > len) {
+            break;
+        }
+        
+        ch = StringSub(code, pos, pos);
+        
+        if (ch == "(") {
+            // Found start of s-expression
+            parenStart = pos;
+            parenEnd = FindMatchingParen(code, parenStart);
+            
+            if (parenEnd == -1) {
+                Log("ERROR: Unmatched opening paren at position " + IntToString(pos));
+                return;
+            }
+            
+            // Extract the s-expression
+            sexpr = StringSub(code, parenStart, parenEnd);
+            
+            // Evaluate it
+            EvalSpawn(sexpr, player, startLocation);
+            
+            pos = parenEnd + 1;
+        }
+        else {
+            // Unexpected character
+            Log("WARNING: Unexpected character at position " + IntToString(pos) + ": '" + ch + "'");
+            pos = pos + 1;
+        }
+    }
+    
+    Log("=== Lisp evaluation complete ===");
+}

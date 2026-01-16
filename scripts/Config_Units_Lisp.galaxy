@@ -1,0 +1,8 @@
+// Config_Units_Lisp.galaxy
+// Unit configuration in s-expression format
+// Format: (spawn 'type count x y facing)
+
+const string gv_configUnitsLisp = 
+"(spawn 'Marine 8 3 0 90) " +
+"(spawn 'Zealot 4 6 3 45) " +
+"(spawn 'Marine 6 9 6 270)";

@@ -1,0 +1,9 @@
+// Config_Units.galaxy
+// Configuration strings for unit spawning
+// Format: "UnitType,Count,X,Y,Facing" separated by semicolons
+// X,Y are offsets from player start location
+// Facing is in degrees (0=east, 90=north, 180=west, 270=south)
+
+// Marine/Zealot configuration
+// Example: "Marine,10,5,0,90;Zealot,5,10,5,180"
+const string gv_configUnits = "Marine,8,3,0,90;Zealot,4,6,3,45;Marine,6,9,6,270";

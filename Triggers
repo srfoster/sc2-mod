@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TriggerData>
+    <Library Id="2497859C">
+        <Root>
+            <Item Type="CustomScript" Library="2497859C" Id="3FD23C59"/>
+            <Item Type="Trigger" Library="2497859C" Id="D1B9F324"/>
+        </Root>
+        <Element Type="CustomScript" Id="3FD23C59">
+            <ScriptCode>
+                include &quot;scripts/Main.galaxy&quot;;
+            </ScriptCode>
+        </Element>
+        <Element Type="Trigger" Id="D1B9F324">
+            <Event Type="FunctionCall" Library="2497859C" Id="2C22FFA7"/>
+            <Action Type="FunctionCall" Library="2497859C" Id="0DDACA88"/>
+            <Action Type="FunctionCall" Library="2497859C" Id="7E4C9350"/>
+        </Element>
+        <Element Type="FunctionCall" Id="2C22FFA7">
+            <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000120"/>
+        </Element>
+        <Element Type="FunctionCall" Id="0DDACA88">
+            <Disabled/>
+            <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000123"/>
+            <ScriptCode>
+                    // Chat area everyone sees
+                    UIDisplayMessage(
+                        PlayerGroupAll(),
+                        c_messageAreaChat,
+                        StringToText(&quot;&gt;&gt;&gt; Debug from Mod UI!&quot;)
+                    );
+            </ScriptCode>
+        </Element>
+        <Element Type="FunctionCall" Id="7E4C9350">
+            <FunctionDef Type="FunctionDef" Library="Ntve" Id="00000123"/>
+            <ScriptCode>
+                Main_init();
+            </ScriptCode>
+        </Element>
+    </Library>
+</TriggerData>

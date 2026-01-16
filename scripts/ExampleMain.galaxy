@@ -1,0 +1,51 @@
+void Main_init()
+{
+
+    int   lp_player;
+    point lp_start;
+
+    // Make sure game speed isn't locked (optional, but safe)
+    GameSetSpeedLocked(false);
+
+    // Crank to Faster
+    GameSetSpeedValue(c_gameSpeedFaster);
+
+    UIDisplayMessage(
+        PlayerGroupAll(),
+        c_messageAreaChat,
+        StringToText(">>> Main_Init() begin!")
+    );
+
+    // For now, just assume "local" player is Player 1
+    lp_player = 1;
+
+    // Get that player's start location (the yellow start-location marker in the map)
+    lp_start = PlayerStartLocation(lp_player);
+
+    // Spawn 1 Marine for that player at their start location, facing 270 degrees
+    UnitCreate(
+        1,            // count
+        "Reaper",     // unit type (raw ID from Data editor)
+        0,            // create flags (0 = default)
+        lp_player,    // owning player
+        lp_start,     // position
+        270.0         // facing angle in degrees
+    );
+
+    // Spawn 1 Marine for that player at their start location, facing 270 degrees
+    UnitCreate(
+        1,            // count
+        "Reaper",     // unit type (raw ID from Data editor)
+        0,            // create flags (0 = default)
+        2,    // owning player
+        lp_start,     // position
+        270.0         // facing angle in degrees
+    );
+
+
+    UIDisplayMessage(
+        PlayerGroupAll(),
+        c_messageAreaChat,
+        StringToText(">>> Main_Init() end!")
+    );
+}

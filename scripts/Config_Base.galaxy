@@ -1,0 +1,9 @@
+// Config_Base.galaxy
+// Configuration strings for base/building spawning
+// Format: "BuildingType,X,Y,WorkerCount" separated by semicolons
+// X,Y are offsets from player start location
+// WorkerCount is how many SCVs/Probes to spawn
+
+// Base configuration
+// Example: "CommandCenter,0,0,12" means CommandCenter at start location with 12 SCVs
+const string gv_configBase = "CommandCenter,0,0,12";

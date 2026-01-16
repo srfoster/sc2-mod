@@ -1,0 +1,7 @@
+// Config_Base_Lisp.galaxy
+// Base/building configuration in s-expression format
+// Format: (spawn 'type x y worker-count)
+
+// Format: (spawn 'CommandCenter 1 0 0)
+// This spawns 1 CommandCenter at (0,0) with default worker count
+const string gv_configBaseLisp = "(spawn 'CommandCenter 1 0 0)";

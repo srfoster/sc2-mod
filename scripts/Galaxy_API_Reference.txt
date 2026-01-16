@@ -1,0 +1,510 @@
+GALAXY API REFERENCE - Quick Reference for Common Functions
+==============================================================
+Source: https://mapster.talv.space/galaxy/reference/
+Last Updated: January 15, 2026
+
+
+=== BANK PERSISTENCE ===
+
+BankLoad (Open Bank)
+--------------------
+Arguments:
+  - string name (bank file name)
+  - int player (player ID)
+
+Returns: bank
+
+Syntax:
+  native bank BankLoad(string name, int player);
+
+Example:
+  bank gameBank = BankLoad("MyBank", 1);
+  
+
+BankSave (Save Bank)
+--------------------
+Arguments:
+  - bank handle
+
+Returns: void
+
+Syntax:
+  native void BankSave(bank b);
+
+Example:
+  BankSave(gameBank);
+
+
+BankWait (Wait For Bank)
+-------------------------
+Arguments:
+  - bank handle
+
+Returns: void
+
+Syntax:
+  native void BankWait(bank b);
+
+Example:
+  BankWait(gameBank);  // Wait for bank to finish loading
+
+
+BankExists (Bank Exists)
+-------------------------
+Arguments:
+  - string name (bank file name)
+  - int player (player ID)
+
+Returns: bool
+
+Syntax:
+  native bool BankExists(string name, int player);
+
+Example:
+  if (BankExists("MyBank", 1)) { ... }
+
+
+BankKeyExists (Bank Key Exists)
+--------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: bool
+
+Syntax:
+  native bool BankKeyExists(bank b, string section, string key);
+
+Example:
+  if (BankKeyExists(gameBank, "Stats", "Score")) { ... }
+
+
+BankValueSetFromInt (Store Integer)
+------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+  - int value
+
+Returns: void
+
+Syntax:
+  native void BankValueSetFromInt(bank b, string section, string key, int value);
+
+Example:
+  BankValueSetFromInt(gameBank, "Stats", "Score", 100);
+
+
+BankValueGetAsInt (Load Integer Value)
+---------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: int
+
+Syntax:
+  native int BankValueGetAsInt(bank b, string section, string key);
+
+Example:
+  int score = BankValueGetAsInt(gameBank, "Stats", "Score");
+
+
+BankValueSetFromFixed (Store Real)
+-----------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+  - fixed value
+
+Returns: void
+
+Syntax:
+  native void BankValueSetFromFixed(bank b, string section, string key, fixed value);
+
+Example:
+  BankValueSetFromFixed(gameBank, "Stats", "Rating", 4.5);
+
+
+BankValueGetAsFixed (Load Real Value)
+--------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: fixed
+
+Syntax:
+  native fixed BankValueGetAsFixed(bank b, string section, string key);
+
+Example:
+  fixed rating = BankValueGetAsFixed(gameBank, "Stats", "Rating");
+
+
+BankValueSetFromString (Store String)
+--------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+  - string value
+
+Returns: void
+
+Syntax:
+  native void BankValueSetFromString(bank b, string section, string key, string value);
+
+Example:
+  BankValueSetFromString(gameBank, "Player", "Name", "PlayerOne");
+
+
+BankValueGetAsString (Load String Value)
+-----------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: string
+
+Syntax:
+  native string BankValueGetAsString(bank b, string section, string key);
+
+Example:
+  string name = BankValueGetAsString(gameBank, "Player", "Name");
+
+
+BankValueSetFromFlag (Store Boolean)
+-------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+  - bool value
+
+Returns: void
+
+Syntax:
+  native void BankValueSetFromFlag(bank b, string section, string key, bool value);
+
+Example:
+  BankValueSetFromFlag(gameBank, "Achievements", "FirstWin", true);
+
+
+BankValueGetAsFlag (Load Boolean Value)
+----------------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: bool
+
+Syntax:
+  native bool BankValueGetAsFlag(bank b, string section, string key);
+
+Example:
+  bool hasWon = BankValueGetAsFlag(gameBank, "Achievements", "FirstWin");
+
+
+BankRemove (Remove Bank)
+-------------------------
+Arguments:
+  - string name (bank file name)
+  - int player (player ID)
+
+Returns: void
+
+Syntax:
+  native void BankRemove(string name, int player);
+
+Example:
+  BankRemove("MyBank", 1);
+
+
+BankKeyRemove (Remove Bank Key)
+--------------------------------
+Arguments:
+  - bank handle
+  - string section
+  - string key
+
+Returns: void
+
+Syntax:
+  native void BankKeyRemove(bank b, string section, string key);
+
+Example:
+  BankKeyRemove(gameBank, "Stats", "OldScore");
+
+
+BankSectionRemove (Remove Bank Section)
+----------------------------------------
+Arguments:
+  - bank handle
+  - string section
+
+Returns: void
+
+Syntax:
+  native void BankSectionRemove(bank b, string section);
+
+Example:
+  BankSectionRemove(gameBank, "TempData");
+
+
+IMPORTANT NOTES:
+- Banks are stored at: Documents\StarCraft II\Banks\<BattleNetID>\<MapID>\<BankName>.SC2Bank
+- BankExists() takes (string name, int player) NOT (bank handle)
+- BankKeyExists() takes (bank handle, section, key)
+- Always call BankWait() after BankLoad() before accessing values
+- Don't forget to call BankSave() to persist changes
+
+=== DEBUG OUTPUT ===
+
+TriggerDebugOutput
+------------------
+Arguments:
+  - int level
+  - text message
+  - bool includeGameUI
+
+Returns: void
+
+Syntax:
+  native void TriggerDebugOutput(int level, text msg, bool msgtype);
+
+Example:
+  TriggerDebugOutput(1, StringToText("Debug message"), false);
+
+
+TriggerDebugSetTypeFile
+-----------------------
+Arguments:
+  - int type
+  - string file
+
+Returns: void
+
+Syntax:
+  native void TriggerDebugSetTypeFile(int type, string file);
+
+Example:
+  TriggerDebugSetTypeFile(1, "debug_output.txt");
+
+
+=== TYPE CONVERSION ===
+
+FixedToString (Convert Real To String)
+---------------------------------------
+Arguments:
+  - fixed value
+  - int precision
+
+Returns: string
+
+Syntax:
+  native string FixedToString(fixed x, int precision);
+
+Examples:
+  FixedToString(123.456, c_fixedPrecisionAny)
+  FixedToString(posX, c_fixedPrecisionAny)
+  FixedToString(0.0, 0)
+
+Precision Constants:
+  - c_fixedPrecisionAny - Use appropriate precision
+
+
+IntToString (Convert Integer To String)
+----------------------------------------
+Arguments:
+  - int value
+
+Returns: string
+
+Syntax:
+  native string IntToString(int i);
+
+Example:
+  IntToString(42)
+
+
+StringToText (Convert String To Text)
+--------------------------------------
+Arguments:
+  - string value
+
+Returns: text
+
+Syntax:
+  native text StringToText(string s);
+
+Example:
+  StringToText("Hello World")
+
+
+=== UNIT OPERATIONS ===
+
+UnitCreate
+----------
+Arguments:
+  - int count
+  - string unitType
+  - int flags
+  - int player
+  - point position
+  - fixed facing
+
+Returns: unit
+
+Syntax:
+  native unit UnitCreate(int count, string type, int createFlags, int player, point pos, fixed facing);
+
+Example:
+  UnitCreate(12, "SCV", 0, 1, startLocation, 270.0);
+
+
+UnitGetType
+-----------
+Arguments:
+  - unit u
+
+Returns: string
+
+Syntax:
+  native string UnitGetType(unit u);
+
+
+UnitGetPosition
+---------------
+Arguments:
+  - unit u
+
+Returns: point
+
+Syntax:
+  native point UnitGetPosition(unit u);
+
+
+UnitGroupAlliance
+-----------------
+Arguments:
+  - int player
+  - int alliance
+  - region r
+  - unitfilter filter
+  - int maxCount
+
+Returns: unitgroup
+
+Syntax:
+  native unitgroup UnitGroupAlliance(int player, int alliance, region inRegion, unitfilter filter, int maxCount);
+
+Example:
+  UnitGroupAlliance(playerIndex, c_unitAllianceAny, RegionEntireMap(), UnitFilter(0, 0, (1 << c_targetFilterMissile) | (1 << c_targetFilterDead) | (1 << c_targetFilterHidden), 0), 0)
+
+
+=== POINT OPERATIONS ===
+
+PointGetX
+---------
+Arguments:
+  - point p
+
+Returns: fixed
+
+Syntax:
+  native fixed PointGetX(point p);
+
+
+PointGetY
+---------
+Arguments:
+  - point p
+
+Returns: fixed
+
+Syntax:
+  native fixed PointGetY(point p);
+
+
+=== TIMER OPERATIONS ===
+
+TimerCreate
+-----------
+Arguments: none
+
+Returns: timer
+
+Syntax:
+  native timer TimerCreate();
+
+
+TimerStart
+----------
+Arguments:
+  - timer t
+  - fixed duration
+  - bool periodic
+  - int timeType
+
+Returns: void
+
+Syntax:
+  native void TimerStart(timer t, fixed duration, bool periodic, int timeType);
+
+Example:
+  TimerStart(dumpTimer, 10.0, true, c_timeGame);
+
+Time Type Constants:
+  - c_timeGame - Game time (affected by speed)
+  - c_timeReal - Real-world time
+
+
+=== TRIGGER OPERATIONS ===
+
+TriggerCreate
+-------------
+Arguments:
+  - string functionName
+
+Returns: trigger
+
+Syntax:
+  native trigger TriggerCreate(string func);
+
+Example:
+  TriggerCreate("MyCallbackFunction")
+
+
+TriggerAddEventTimer
+--------------------
+Arguments:
+  - trigger t
+  - timer tm
+
+Returns: void
+
+Syntax:
+  native void TriggerAddEventTimer(trigger t, timer tm);
+
+
+=== COMMON CONSTANTS ===
+
+Alliance Types:
+  - c_unitAllianceAny
+  - c_unitAllianceEnemy
+  - c_unitAllianceAlly
+
+Target Filter Flags:
+  - c_targetFilterMissile
+  - c_targetFilterDead  
+  - c_targetFilterHidden
+
+Precision:
+  - c_fixedPrecisionAny

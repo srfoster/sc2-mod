@@ -1,0 +1,63 @@
+include "TriggerLibs/NativeLib"
+
+include "Lib2497859C_h"
+
+//--------------------------------------------------------------------------------------------------
+// Library: main
+//--------------------------------------------------------------------------------------------------
+// External Library Initialization
+void lib2497859C_InitLibraries () {
+    libNtve_InitVariables();
+}
+
+// Custom Script
+//--------------------------------------------------------------------------------------------------
+// Custom Script: include
+//--------------------------------------------------------------------------------------------------
+include "scripts/Main.galaxy";
+
+void lib2497859C_InitCustomScript () {
+}
+
+// Triggers
+//--------------------------------------------------------------------------------------------------
+// Trigger: init
+//--------------------------------------------------------------------------------------------------
+bool lib2497859C_gt_init_Func (bool testConds, bool runActions) {
+    // Automatic Variable Declarations
+    // Actions
+    if (!runActions) {
+        return true;
+    }
+
+    Main_init();
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+void lib2497859C_gt_init_Init () {
+    lib2497859C_gt_init = TriggerCreate("lib2497859C_gt_init_Func");
+    TriggerAddEventMapInit(lib2497859C_gt_init);
+}
+
+void lib2497859C_InitTriggers () {
+    lib2497859C_gt_init_Init();
+}
+
+//--------------------------------------------------------------------------------------------------
+// Library Initialization
+//--------------------------------------------------------------------------------------------------
+bool lib2497859C_InitLib_completed = false;
+
+void lib2497859C_InitLib () {
+    if (lib2497859C_InitLib_completed) {
+        return;
+    }
+
+    lib2497859C_InitLib_completed = true;
+
+    lib2497859C_InitLibraries();
+    lib2497859C_InitCustomScript();
+    lib2497859C_InitTriggers();
+}
+
