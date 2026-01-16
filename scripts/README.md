@@ -1,5 +1,21 @@
 # TheMod Development Guide
 
+Ideas for future features:
+
+* (for-player ...) Param
+* (clear)
+* (a-move [GROUP] [POS])
+
+## Drills
+
+(begin
+  (spawn 'Marine 10)
+  (upgrade 'Stimpack)
+  (spawn 'Zergling 15 5 0 90 2)
+  (upgrade 'zerglingmovementspeed 2)
+)
+
+
 ## Development Cycle
 
 1. **Edit Code**: Modify `Main.galaxy` in this directory

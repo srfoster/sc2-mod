@@ -347,9 +347,9 @@ string EvalSpawn(string sexpr, int player, point startLocation)
     command = GetSExprToken(sexpr, 0);
     tokenCount = CountSExprTokens(sexpr);
     
-    Log("Evaluating s-expr: " + sexpr);
-    Log("  Command: " + command);
-    Log("  Token count: " + IntToString(tokenCount));
+    // Log("Evaluating s-expr: " + sexpr);
+    // Log("  Command: " + command);
+    // Log("  Token count: " + IntToString(tokenCount));
     
     if (command != "spawn") {
         Log("  ERROR: Expected 'spawn' command, got '" + command + "'");
@@ -404,10 +404,10 @@ string EvalSpawn(string sexpr, int player, point startLocation)
     // Player (default: 1)
     if (tokenCount >= 7) {
         targetPlayer = ParseInt(LookupVariable(GetSExprToken(sexpr, 6)));
-        Log("  Using player from token 6: " + IntToString(targetPlayer));
+        // Log("  Using player from token 6: " + IntToString(targetPlayer));
     } else {
         targetPlayer = 1;
-        Log("  Using default player: 1 (tokenCount=" + IntToString(tokenCount) + ")");
+        // Log("  Using default player: 1 (tokenCount=" + IntToString(tokenCount) + ")");
     }
     
     // Calculate spawn point
@@ -457,9 +457,53 @@ void EvalUpgrade(string sexpr, int player, point startLocation)
     ApplyPlayerUpgrade(upgradeName, targetPlayer);
 }
 
+// Evaluate an attack command from s-expression
+// Example: "(attack @unitgroup1 10 20)" - attack-move group to position (10,20)
+// group: unitgroup reference like @unitgroup1
+// x, y: target coordinates relative to start location
+void EvalAttack(string sexpr, point startLocation)
+{
+    string command;
+    string groupRef;
+    int offsetX;
+    int offsetY;
+    point targetPoint;
+    unitgroup group;
+    
+    command = GetSExprToken(sexpr, 0);
+    
+    if (command != "attack") {
+        Log("  ERROR: Expected 'attack' command, got '" + command + "'");
+        return;
+    }
+    
+    // Get unitgroup reference
+    groupRef = LookupVariable(GetSExprToken(sexpr, 1));
+    
+    // Get target position
+    offsetX = ParseInt(LookupVariable(GetSExprToken(sexpr, 2)));
+    offsetY = ParseInt(LookupVariable(GetSExprToken(sexpr, 3)));
+    
+    // Calculate target point
+    targetPoint = PointWithOffset(startLocation, offsetX, offsetY);
+    
+    // Retrieve the unitgroup
+    group = RetrieveUnitGroup(groupRef);
+    
+    if (group == null) {
+        Log("  ERROR: Invalid unitgroup reference: " + groupRef);
+        return;
+    }
+    
+    Log("Issuing attack-move to (" + IntToString(offsetX) + "," + IntToString(offsetY) + ") for " + groupRef);
+    
+    // Issue attack-move order
+    AttackMove(group, targetPoint);
+}
+
 // Evaluate a define command from s-expression
 // Example: "(define m 'Marine)" or "(define (funcname params) body)"
-void EvalDefine(string sexpr)
+void EvalDefine(string sexpr, int player, point startLocation)
 {
     string command;
     string varName;
@@ -536,8 +580,19 @@ void EvalDefine(string sexpr)
         // Variable definition: (define var value)
         varValue = GetSExprToken(sexpr, 2);
         
-        // Remove leading quote from value if present
-        if (StartsWith(varValue, "'")) {
+        // If the value is an s-expression (like (spawn ...)), evaluate it
+        if (StartsWith(varValue, "(")) {
+            string cmd;
+            cmd = GetSExprToken(varValue, 0);
+            
+            // Check if it's a spawn command - those return unitgroup references
+            if (cmd == "spawn") {
+                varValue = EvalSpawn(varValue, player, startLocation);
+            }
+            // Add other evaluatable commands here if needed
+        }
+        // Remove leading quote from value if present (for literals)
+        else if (StartsWith(varValue, "'")) {
             varValue = StringSub(varValue, 2, StringLength(varValue));
         }
         
@@ -836,7 +891,7 @@ void EvalExpression(string sexpr, int player, point startLocation)
     command = GetSExprToken(sexpr, 0);
     
     if (command == "define") {
-        EvalDefine(sexpr);
+        EvalDefine(sexpr, player, startLocation);
     }
     else if (command == "begin") {
         EvalBegin(sexpr, player, startLocation);
@@ -849,6 +904,9 @@ void EvalExpression(string sexpr, int player, point startLocation)
     }
     else if (command == "upgrade") {
         EvalUpgrade(sexpr, player, startLocation);
+    }
+    else if (command == "attack") {
+        EvalAttack(sexpr, startLocation);
     }
     else if (command == "if") {
         EvalIf(sexpr, player, startLocation);

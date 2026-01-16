@@ -69,3 +69,9 @@ void ApplyPlayerUpgrade(string upgradeName, int player)
     
     Log("  Upgrade complete!");
 }
+
+// Issue attack-move command to a unitgroup
+void AttackMove(unitgroup group, point position)
+{
+    UnitGroupIssueOrder(group, OrderTargetingPoint(AbilityCommand("attack", 0), position), c_orderQueueReplace);
+}
