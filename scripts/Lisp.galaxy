@@ -284,7 +284,7 @@ int CountSExprTokens(string sexpr)
 // === EVALUATOR ===
 
 // Evaluate a spawn command from s-expression
-// Example: "(spawn 'Marine 8 3 0 90)"
+// Example: "(spawn 'Marine 8 3 0 90)" or "(spawn 'Marine 8 3 0 90 2)" for player 2
 void EvalSpawn(string sexpr, int player, point startLocation)
 {
     string command;
@@ -293,10 +293,13 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     int offsetX;
     int offsetY;
     int facing;
+    int targetPlayer;
     point spawnPoint;
+    int tokenCount;
     
     // Parse the s-expression
     command = GetSExprToken(sexpr, 0);
+    tokenCount = CountSExprTokens(sexpr);
     
     // Log("Evaluating s-expr: " + sexpr);
     // Log("  Command: " + command);
@@ -325,17 +328,24 @@ void EvalSpawn(string sexpr, int player, point startLocation)
     offsetY = ParseInt(LookupVariable(GetSExprToken(sexpr, 4)));
     facing = ParseInt(LookupVariable(GetSExprToken(sexpr, 5)));
     
+    // Check for optional player parameter (6th token)
+    if (tokenCount >= 7) {  // 6 tokens + closing paren = 7 total
+        targetPlayer = ParseInt(LookupVariable(GetSExprToken(sexpr, 6)));
+    } else {
+        targetPlayer = player;  // Default to current player
+    }
+    
     // Calculate spawn point
     spawnPoint = PointWithOffset(startLocation, offsetX, offsetY);
     
     // Spawn based on unit type
     if (StringContains(unitType, "CommandCenter", c_stringAnywhere, c_stringNoCase)) {
         // Base spawn - ignores count and facing parameters (creates CommandCenter + SCVs)
-        SpawnBase(player, spawnPoint);
+        SpawnBase(targetPlayer, spawnPoint);
     }
     else {
         // Generic unit spawn - works for any unit type
-        SpawnUnit(unitType, count, player, spawnPoint, facing);
+        SpawnUnit(unitType, count, targetPlayer, spawnPoint, facing);
     }
 }
 

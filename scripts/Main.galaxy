@@ -18,6 +18,7 @@ bool LispUIHandler(bool testConds, bool runActions);
 // Global UI variables
 int g_lispDialog;
 int g_lispTextInput;
+int g_lispDisplayLabel;
 int g_lispExecuteButton;
 int g_lispCloseButton;
 int g_lispCurrentPlayer;
@@ -140,7 +141,7 @@ void CreateLispUI(int player, point location)
     
     // Create a label to show larger/formatted code (read-only display)
     DialogControlCreate(g_lispDialog, c_triggerControlTypeLabel);
-    int g_lispDisplayLabel = DialogControlLastCreated();
+    g_lispDisplayLabel = DialogControlLastCreated();
     DialogControlSetSize(g_lispDisplayLabel, PlayerGroupSingle(player), 450, 80);
     DialogControlSetPosition(g_lispDisplayLabel, PlayerGroupSingle(player), c_anchorCenter, 0, -10);
     DialogControlSetPropertyAsText(g_lispDisplayLabel, c_triggerControlPropertyText, PlayerGroupSingle(player), StringToText("Enter Lisp code above..."));
